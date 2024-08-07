@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimpleOCR</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <h1>Upload Document for OCR</h1>
+    <form method="post" enctype="multipart/form-data">
+        <input type="file" name="file" accept="image/*">
+        <button type="submit">Upload</button>
+    </form>
+    <h2>Extracted Text:</h2>
+    <pre id="extracted-text"></pre>
+
+    <script type="text/python">
+        from flask import Flask, request, render_template_string
+        import pytesseract
+        from PIL import Image
+        import os
+
+        app = Flask(__name__)
+
+        UPLOAD_FOLDER = 'uploads'
+        if not os.path.exists(UPLOAD_FOLDER):
+            os.makedirs(UPLOAD_FOLDER)
+
+        app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+        template = """
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>SimpleOCR</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    margin: 20px;
+                }
+                h1 {
+                    color: #333;
+                }
+                form {
+                    margin-bottom: 20px;
+                }
+                pre {
+                    background: #f4f4f4;
+                    padding: 10px;
+                    border: 1px solid #ddd;
+                }
+            </style>
+        </head>
+        <body>
+            <h1>Upload Document for OCR</h1>
+            <form method="post" enctype="multipart/form-data">
+                <input type="file" name="file" accept="image/*">
+                <button type="submit">Upload</button>
+            </form>
+            <h2>Extracted Text:</h2>
+            <pre>{{ text }}</pre>
+        </body>
+        </html>
+        """
+
+        @app.route('/', methods=['GET', 'POST'])
+        def index():
+            text = ''
+            if request.method == 'POST':
+                file = request.files['file']
+                if file:
+                    file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+                    file.save(file_path)
+                    text = pytesseract.image_to_string(Image.open(file_path))
+            return render_template_string(template, text=text)
+
+        if __name__ == '__main__':
+            app.run(debug=True)
+    </script>
+</body>
+</html>
